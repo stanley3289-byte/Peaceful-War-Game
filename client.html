@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>天下太平 - 多人連線最終版</title>
     <style>
-        /* CSS 樣式 (已修正按鈕禁用狀態) */
+        /* CSS 樣式 */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; padding: 0; background-color: #333; font-family: 'Microsoft JhengHei', monospace; overflow: hidden; user-select: none; -webkit-user-select: none; }
         canvas { display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f0f2f5; z-index: 1; }
@@ -35,13 +35,45 @@
         .btn-menu:active { transform: scale(0.95); }
         .btn-menu:disabled { background: #999; cursor: not-allowed; box-shadow: none; } 
 
-        /* HUD 與遊戲內按鈕 */
+        /* --- 新增：規則說明 Modal 樣式 --- */
+        #rules-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        .rules-content {
+            background: #fff; padding: 30px; border-radius: 20px;
+            max-width: 650px; width: 100%;
+            border: 5px solid #1976d2;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            max-height: 90vh; overflow-y: auto; /* 支援手機捲動 */
+        }
+        .rules-content h2 {
+            text-align: center; color: #1976d2; margin-top: 0; margin-bottom: 20px;
+            font-size: 36px; border-bottom: 2px solid #eee; padding-bottom: 10px;
+        }
+        .rules-section { margin-bottom: 20px; }
+        .rules-title { font-size: 22px; color: #d32f2f; font-weight: bold; margin-bottom: 8px; }
+        .rules-text { font-size: 18px; color: #333; line-height: 1.6; font-weight: bold; margin: 0; }
+        .rules-sub-text { font-size: 16px; color: #555; margin-left: 20px; margin-top: 5px; display: block; }
+        
+        .btn-close-rules {
+            display: block; margin: 25px auto 0;
+            background: #444; color: white; border: none;
+            padding: 12px 40px; font-size: 20px; border-radius: 50px; cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-close-rules:hover { background: #222; }
+
+        /* HUD 與遊戲內按鈕 (桌面版預設樣式) */
         #hud-container { 
             position: fixed; bottom: 20px; right: 20px; width: auto; max-width: 300px; 
             background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); 
             border-radius: 15px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); 
             z-index: 100; display: flex; flex-direction: column; align-items: center; 
             border: 2px solid #444; 
+            transition: all 0.3s ease; 
         }
         .hud-msg { font-size: 16px; color: #d32f2f; font-weight: bold; margin-bottom: 10px; text-align: center; min-height: 20px; white-space: nowrap; }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
@@ -62,32 +94,37 @@
         .btn-rect:active { transform: scale(0.95); }
         .btn-rect:disabled { background: #666; color: #aaa; cursor: not-allowed; } 
 
+        /* *** 手機版優化 *** */
+        @media (max-width: 768px) {
+            h1 { font-size: 50px; }
+            #hud-container { bottom: 10px; right: 10px; padding: 10px; max-width: 220px; border-radius: 12px; }
+            .btn-circle { width: 45px; height: 45px; font-size: 22px; border-width: 1.5px; }
+            .btn-rect { width: 60px; padding: 8px 2px; font-size: 12px; }
+            .hud-msg { font-size: 14px; margin-bottom: 5px; }
+            .btn-grid { gap: 5px; }
+            
+            /* 規則視窗手機版字體調整 */
+            .rules-content h2 { font-size: 28px; }
+            .rules-title { font-size: 18px; }
+            .rules-text { font-size: 15px; }
+            .rules-sub-text { font-size: 14px; }
+        }
+
         /* 其他介面元素 */
         #top-status-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 8px; background: rgba(255,255,255,0.85); text-align: center; font-weight: bold; color: #d32f2f; z-index: 90; border-bottom: 1px solid #ccc; font-size: 14px; }
         #player-status-float { position: fixed; bottom: 20px; left: 20px; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px; font-weight: bold; color: #1565c0; z-index: 90; font-size: 14px; border: 1px solid #ccc; }
         
-        /* 修正: 房間代碼顯示樣式 (加大 padding 確保文字在圓角框中) */
-        #room-code-display {
-            background: #d32f2f; 
-            color: white; 
-            font-size: 20px; /* 稍微放大確保視覺突出 */
-            font-weight: bold;
-            padding: 10px 20px; /* 加大垂直和水平內邊距 */
-            border-radius: 12px; /* 增加圓角 */
-            margin-top: 15px; 
-            letter-spacing: 5px; /* 加大間距 */
-            min-width: 120px; 
-            text-align: center;
+        @media (max-width: 768px) {
+            #player-status-float { bottom: 10px; left: 10px; font-size: 12px; padding: 6px; }
         }
-
+        
+        #room-code-display { background: #d32f2f; color: white; font-size: 20px; font-weight: bold; padding: 10px 20px; border-radius: 12px; margin-top: 15px; letter-spacing: 5px; min-width: 120px; text-align: center; }
         #match-area { display: flex; flex-direction: column; align-items: center; padding: 10px; border-radius: 10px; margin-top: 10px; }
         #room-code-group { display: flex; align-items: center; }
         #room-code-input { padding: 8px; margin-right: 5px; font-size: 16px; width: 180px; border-radius: 5px; border: 1px solid #ccc; height: 48px; }
         #btn-join-private { padding: 10px 15px; font-size: 16px; height: 48px; width: 100px; min-width: 100px; margin: 0; }
-
         #name-input-container { margin-bottom: 20px; }
         #user-name-input { padding: 10px; font-size: 18px; border-radius: 5px; border: 2px solid #ccc; text-align: center; width: 250px; }
-        
         #rps-result-display { font-size: 24px; font-weight: bold; margin-bottom: 5px; color: #1565c0; text-align: center; }
     </style>
 </head>
@@ -104,6 +141,8 @@
         <div id="name-input-container">
             <input type="text" id="user-name-input" placeholder="請輸入名字 (預設: 玩家)" maxlength="10">
         </div>
+        
+        <button class="btn-menu" id="btn-open-rules" style="background: #1976d2;">玩法說明</button>
 
         <button class="btn-menu" id="btn-single-player">單人模式 (對戰 CPU)</button>
         <button class="btn-menu" id="btn-start">隨機配對</button>
@@ -118,6 +157,32 @@
         </div>
         
         <button class="btn-menu" id="btn-exit" style="background:#d32f2f;">離開</button>
+    </div>
+
+    <div id="rules-modal" class="hidden">
+        <div class="rules-content">
+            <h2>遊戲規則</h2>
+            
+            <div class="rules-section">
+                <div class="rules-title">增加設施：</div>
+                <p class="rules-text">每猜贏一次，就可以在自己的領域內新增設施。</p>
+                <span class="rules-sub-text">● 第一階段：建立保護罩。(當成功建立三層保護罩後即可進入第二階段)</span>
+                <span class="rules-sub-text">● 第二階段：加入大炮。(當進入第二階段後即使保護罩消失仍可建立大炮)</span>
+            </div>
+
+            <div class="rules-section">
+                <div class="rules-title">攻擊與防禦：</div>
+                <p class="rules-text">加入武器後，可以攻擊對方的設施。</p>
+                <p class="rules-text">被攻擊的一方需猜贏對方才能修復設施並反擊。</p>
+            </div>
+
+            <div class="rules-section">
+                <div class="rules-title">遊戲結束：</div>
+                <p class="rules-text">當其中一方的保護罩和堡壘全部被摧毀時，該方即輸掉遊戲。</p>
+            </div>
+
+            <button class="btn-close-rules" id="btn-close-rules">我知道了</button>
+        </div>
     </div>
 
     <div id="hud-container" class="hidden">
@@ -176,7 +241,7 @@
     const Sound = {
         click: () => createAndPlayTone(400, 'sine', 0.1),
         build: () => createAndPlayTone(150, 'square', 0.3, 0.05),
-        shoot: () => {
+        shoot: () => { 
             if (!audioCtx) { try { audioCtx = new AudioContext(); } catch (e) { console.error("Audio failed:", e); return; } }
             if(audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -186,6 +251,18 @@
             gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        },
+        turret_shoot: () => { 
+            if (!audioCtx) { try { audioCtx = new AudioContext(); } catch (e) { console.error("Audio failed:", e); return; } }
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; 
+            osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.25); 
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.35); 
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.35);
         },
         boom: () => createAndPlayTone(80, 'sawtooth', 0.5, 0.2)
     };
@@ -199,8 +276,9 @@
     let animationState = false;
     let bullets = [];
     let explosions = [];
+    let rpsCountDownTimer = null;
 
-    // --- 輔助函數 ---
+    // --- 輔助函數 (不變) ---
     function getUsername() {
         const nameInput = document.getElementById('user-name-input').value.trim();
         return nameInput || "玩家";
@@ -225,7 +303,6 @@
         setMsg(msg);
         ['grp-rps','grp-act','grp-tgt','grp-back'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         
-        // 隱藏房間代碼顯示區域 (只有在遊戲開始前才顯示)
         document.getElementById('room-code-display').classList.add('hidden'); 
 
         if(mode=='rps') document.getElementById('grp-rps').classList.remove('hidden'); 
@@ -247,9 +324,7 @@
         const opponentData = GAME_STATE[MY_ROLE === 'player1' ? 'player2' : 'player1'];
         const resultDisplay = document.getElementById('rps-result-display');
         
-        // 確保房間代碼顯示在遊戲開始後隱藏
         document.getElementById('room-code-display').classList.add('hidden'); 
-
 
         const lastLog = GAME_STATE.log[GAME_STATE.log.length - 1];
         setMsg(lastLog); 
@@ -274,22 +349,38 @@
             setTimeout(() => {
                 if (resultDisplay) resultDisplay.classList.add('hidden');
             }, 1500); 
-
         } else {
             resultDisplay.classList.add('hidden');
         }
 
+        if (rpsCountDownTimer) {
+            clearInterval(rpsCountDownTimer);
+            rpsCountDownTimer = null;
+        }
+
         if (phase === 'RPS_CHOICE') {
             if (myData.rpsChoice === null) {
-                showUI('rps', "請出拳"); 
+                let timeLeft = 5;
+                setMsg(`請出拳 (${timeLeft})`); 
+                
+                showUI('rps', `請出拳 (${timeLeft})`); 
                 ['rps-rock', 'rps-scissors', 'rps-paper'].forEach(id => document.getElementById(id).disabled = false);
+
+                rpsCountDownTimer = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft >= 0) {
+                        setMsg(`請出拳 (${timeLeft})`);
+                    } else {
+                        clearInterval(rpsCountDownTimer);
+                    }
+                }, 1000);
             } else {
                 showUI('none', `已出拳，等待對手 (${opponentData.name})...`);
             }
         } else if (phase === 'ACTION_PHASE' && isMyTurn) {
             showUI('act', "你的行動回合");
             
-            const canBuildTurret = (myData.shields >= 3 && !myData.hasTurret);
+            const canBuildTurret = (myData.turretUnlocked && !myData.hasTurret);
             const canAttack = myData.hasTurret;
             
             document.getElementById('btn-tu').disabled = !canBuildTurret;
@@ -327,7 +418,6 @@
             return;
         }
         
-        // 遊戲開始，隱藏房間代碼顯示輸入框
         document.getElementById('room-code-display').classList.add('hidden');
 
         const userName = getUsername();
@@ -354,7 +444,6 @@
             return;
         }
         
-        // 創建房間時，清空並隱藏按鈕，顯示訊息
         ['grp-rps','grp-act','grp-tgt','grp-back'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         document.getElementById('rps-result-display').classList.add('hidden');
         
@@ -368,7 +457,6 @@
             document.getElementById('menu-screen').classList.add('hidden');
             document.getElementById('hud-container').classList.remove('hidden');
             
-            // 加入房間時，清空並隱藏按鈕
             ['grp-rps','grp-act','grp-tgt','grp-back'].forEach(id=>document.getElementById(id).classList.add('hidden'));
             document.getElementById('rps-result-display').classList.add('hidden');
             document.getElementById('room-code-display').classList.add('hidden');
@@ -386,6 +474,24 @@
         }
     }
     
+    function getTurretY(victimRole, victimData) {
+        const isEnemy = (victimRole !== MY_ROLE); 
+        const groundY = isEnemy ? 50 : h - 50;
+        const dir = isEnemy ? 1 : -1;
+        const turretFontSize = 60;
+        const rowH = 45;
+
+        let shieldTopY;
+        if (victimData.shields > 0) {
+            let shieldCount = victimData.shields > 0 ? victimData.shields : 1; 
+            let maxShieldR = 100 + ((shieldCount - 1) * 15);
+            shieldTopY = groundY + (dir * maxShieldR);
+            return shieldTopY + (dir * (turretFontSize / 2 + 5)); 
+        } else {
+            return groundY + (dir * rowH * 2) + (dir * (turretFontSize / 2 + 5));
+        }
+    }
+
     function setupSocketListeners() {
         if (!socket) return;
         
@@ -397,7 +503,6 @@
             MY_ROLE = data.role;
             MY_ROOM_ID = data.roomId;
             setMsg(`配對成功！您是 ${MY_ROLE}。`);
-            // 遊戲開始，隱藏房間代碼顯示
             document.getElementById('room-code-display').classList.add('hidden'); 
             updateInfo(); 
         });
@@ -405,10 +510,9 @@
         socket.on('game_state_update', (state) => {
             GAME_STATE = state;
             
-            // ... (動畫觸發邏輯不變)
             const lastLog = state.log[state.log.length - 1];
             
-            if (lastLog && lastLog.includes('攻擊了') && (lastLog.includes('成功擊落') || lastLog.includes('摧毀了') || lastLog.includes('直接命中'))) {
+            if (lastLog && lastLog.includes('攻擊了') && (lastLog.includes('成功擊落') || lastLog.includes('摧毀') || lastLog.includes('直接命中'))) {
                 
                 const attackerName = lastLog.split(' ')[0];
                 const myName = state[MY_ROLE].name;
@@ -419,11 +523,14 @@
                 
                 let targetType = 'base'; 
                 if (lastLog.includes('護盾') || lastLog.includes('成功擊落')) targetType = 'shield';
-                else if (lastLog.includes('砲塔') || lastLog.includes('摧毀了')) targetType = 'turret'; 
+                else if (lastLog.includes('砲塔') || lastLog.includes('摧毀')) targetType = 'turret'; 
                 else if (lastLog.includes('本體') || lastLog.includes('直接命中')) targetType = 'base';
 
+                const isTurretAttack = (targetType === 'turret'); 
+
                 const startX = w/2;
-                const startY = (attackerRole === 'player1') ? h - 50 - 40 : 50 + 40; 
+                const startY = GAME_STATE[attackerRole].hasTurret ? getTurretY(attackerRole, GAME_STATE[attackerRole]) : (attackerRole === 'player1' ? h - 50 - 40 : 50 + 40);
+                
                 const targetY = getAttackTargetY(targetType, targetRole);
                 
                 if (!animationState) {
@@ -431,9 +538,17 @@
                     bullets.push({ 
                         x: startX, y: startY, 
                         tx: startX, ty: targetY, 
-                        speed: 25, active: true 
+                        speed: 25, 
+                        active: true, 
+                        type: isTurretAttack ? 'turret' : 'standard'
                     });
-                    Sound.shoot(); 
+                    
+                    if (isTurretAttack) {
+                        Sound.turret_shoot();
+                    } else {
+                        Sound.shoot(); 
+                    }
+
                     animationState = true;
                 }
             }
@@ -444,20 +559,15 @@
 
         socket.on('match_info', (msg) => { setMsg(msg); });
         
-        // 處理私人房間創建成功事件
         socket.on('private_room_created', (code) => { 
-            // 1. 設定主要訊息
             setMsg(`房間已創建！請將代碼分享給朋友。`); 
             
-            // 2. 顯示房間代碼在專用區域
             const roomDisplay = document.getElementById('room-code-display');
             roomDisplay.innerText = code;
             roomDisplay.classList.remove('hidden');
 
-            // 3. 恢復主選單輸入框的值（方便複製）
             document.getElementById('room-code-input').value = code; 
             
-            // 4. 恢復按鈕狀態
             document.getElementById('btn-create-private').disabled = false;
             document.getElementById('btn-join-private').disabled = false;
         });
@@ -469,10 +579,10 @@
         socket.on('game_over', (reason) => { alert("遊戲結束: " + reason); location.reload(); });
     }
 
-    // ... (其他遊戲邏輯函數不變)
     function playRPS(val) {
         if (!MY_ROOM_ID || !socket || !GAME_STATE || GAME_STATE.currentPhase !== 'RPS_CHOICE' || GAME_STATE[MY_ROLE].rpsChoice) return;
         Sound.click();
+        if (rpsCountDownTimer) clearInterval(rpsCountDownTimer);
         socket.emit('player_rps_choice', { roomId: MY_ROOM_ID, choice: val });
         ['rps-rock', 'rps-scissors', 'rps-paper'].forEach(id => document.getElementById(id).disabled = true);
     }
@@ -523,16 +633,8 @@
 
         if (target === 'shield') { return shieldTopY; }
 
-        if (target === 'turret') {
-            let poleLen = 40; 
-            let flagBaseY = victim.shields > 0 ? shieldTopY : (groundY + (dir * 70)); 
-            let poleEndY = flagBaseY + (dir * poleLen);
-            let safeLimit = h/2 + (isEnemyTarget ? -20 : 20);
-            
-            if (isEnemyTarget && poleEndY > safeLimit) poleEndY = safeLimit;
-            if (!isEnemyTarget && poleEndY < safeLimit) poleEndY = safeLimit;
-
-            return poleEndY;
+        if (target === 'turret' && victim.hasTurret) {
+            return getTurretY(victimRole, victim);
         }
         return groundY;
     }
@@ -567,7 +669,7 @@
             let rotationCenterY = groundY + (dir * rowH); 
             ctx.save();
             ctx.translate(x, rotationCenterY);
-            ctx.scale(-1, -1); 
+            ctx.scale(1, -1); 
             ctx.translate(-x, -rotationCenterY); 
         }
 
@@ -598,23 +700,36 @@
             maxShieldH = groundY + (dir * r);
         }
         
-        let flagBaseY = maxShieldH;
-        if(data.shields === 0) { flagBaseY = r2_y + (dir * 25); } 
-
         if(data.hasTurret) {
-            let safeLimit = h/2 + (isEnemy ? -20 : 20);
-            if (isEnemy && flagBaseY > safeLimit) flagBaseY = safeLimit;
-            if (!isEnemy && flagBaseY < safeLimit) flagBaseY = safeLimit;
+            let turretFontSize = 60; 
+            ctx.font = "bold " + turretFontSize + "px Microsoft JhengHei"; 
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
             
-            ctx.strokeStyle = "#222"; ctx.fillStyle = "#d32f2f"; ctx.lineWidth = 3;
-            let poleLen = 40; let poleEndY = flagBaseY + (dir * poleLen); 
-            ctx.beginPath(); ctx.moveTo(x, flagBaseY); ctx.lineTo(x, poleEndY); ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, poleEndY);
-            ctx.lineTo(x + 25, poleEndY - (dir * 10)); 
-            ctx.lineTo(x, poleEndY - (dir * 20));
-            ctx.fill();
+            ctx.fillStyle = "#d32f2f"; 
+            ctx.strokeStyle = "#222";
+            ctx.lineWidth = 2;
+
+            const role = isEnemy ? 'player2' : 'player1'; 
+            let turretTopY = getTurretY(role, data); 
+
+            let safeLimit = h/2 + (isEnemy ? -turretFontSize : turretFontSize);
+            if (isEnemy && turretTopY > safeLimit) turretTopY = safeLimit;
+            if (!isEnemy && turretTopY < safeLimit) turretTopY = safeLimit;
+
+            ctx.save();
+            if (isEnemy) {
+                ctx.translate(x, turretTopY);
+                ctx.scale(1, -1);
+                ctx.translate(-x, -turretTopY);
+            }
+
+            ctx.fillText("凸", x, turretTopY);
+            ctx.strokeText("凸", x, turretTopY);
+            
+            ctx.restore();
         }
+        
         ctx.strokeStyle = "#000"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x - 150, groundY); ctx.lineTo(x + 150, groundY); ctx.stroke();
     }
     
@@ -632,7 +747,6 @@
         }
     }
 
-    // 主迴圈 (略)
     let gameLoop = function() {
         try {
             if (!ctx) { requestAnimationFrame(gameLoop); return; }
@@ -646,8 +760,9 @@
                     let dx = b.tx - b.x; let dy = b.ty - b.y; let dist = Math.sqrt(dx*dx + dy*dy);
                     if (dist < b.speed) { 
                         b.x = b.tx; b.y = b.ty; 
-                        createExplosion(b.tx, b.ty); 
+                        
                         if(b.active) { 
+                            createExplosion(b.tx, b.ty); 
                             Sound.boom(); 
                             b.active = false; 
                         }
@@ -655,8 +770,15 @@
                         b.x += (dx/dist) * b.speed; 
                         b.y += (dy/dist) * b.speed; 
                         activeAnimations = true; 
-                        ctx.fillStyle = "red"; 
-                        ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill(); 
+                        
+                        if (b.type === 'turret') {
+                            ctx.fillStyle = "deepskyblue"; 
+                            ctx.fillRect(b.x - 6, b.y - 6, 12, 12); 
+                        } else {
+                            ctx.fillStyle = "red"; 
+                            ctx.beginPath(); ctx.arc(b.x, b.y, 5, 0, Math.PI*2); ctx.fill(); 
+                        }
+                        activeAnimations = true; 
                     }
                 });
 
@@ -669,30 +791,33 @@
                     ex.r += 1.5; ex.alpha -= 0.05; 
                     if(ex.alpha > 0) activeAnimations = true; 
                 });
-                explosions = explosions.filter(e => e.alpha > 0);
+                explosions = explosions.filter(ex => ex.alpha > 0); 
 
-                if (!activeAnimations) {
-                    animationState = false;
-                }
+                if (!activeAnimations) { animationState = false; }
             }
-
-        } catch (e) {
-            console.error("FATAL ERROR in gameLoop, 繪圖停止:", e);
-            document.getElementById('top-status-bar').innerText = "FATAL ERROR: 繪圖停止，請檢查控制台。";
-            return;
+        } catch(e) {
+            console.error("Game loop error:", e);
         }
         requestAnimationFrame(gameLoop);
-    };
-
-
-    // --- 事件綁定 ---
+    }
+    
+    // --- UI & Event Listeners ---
     function setupEventListeners() {
         try {
-            document.getElementById('btn-start').addEventListener('click', () => { Sound.click(); startGame('public'); });
-            document.getElementById('btn-single-player').addEventListener('click', () => { Sound.click(); startGame('single'); });
-            document.getElementById('btn-create-private').addEventListener('click', () => { Sound.click(); createPrivateRoom(); });
-            document.getElementById('btn-join-private').addEventListener('click', () => { Sound.click(); joinPrivateRoom(); });
+            document.getElementById('user-name-input').addEventListener('input', updateInfo);
+            document.getElementById('btn-start').addEventListener('click', () => startGame('public'));
+            document.getElementById('btn-single-player').addEventListener('click', () => startGame('single'));
+            document.getElementById('btn-create-private').addEventListener('click', createPrivateRoom);
+            document.getElementById('btn-join-private').addEventListener('click', joinPrivateRoom);
             document.getElementById('btn-exit').addEventListener('click', () => { if(socket) socket.disconnect(); location.reload(); });
+            
+            // 新增: 規則視窗控制
+            document.getElementById('btn-open-rules').addEventListener('click', () => {
+                document.getElementById('rules-modal').classList.remove('hidden');
+            });
+            document.getElementById('btn-close-rules').addEventListener('click', () => {
+                document.getElementById('rules-modal').classList.add('hidden');
+            });
             
             document.getElementById('rps-rock').addEventListener('click', () => playRPS('rock'));
             document.getElementById('rps-scissors').addEventListener('click', () => playRPS('scissors'));
