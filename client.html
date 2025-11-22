@@ -35,7 +35,7 @@
         .btn-menu:active { transform: scale(0.95); }
         .btn-menu:disabled { background: #999; cursor: not-allowed; box-shadow: none; } 
 
-        /* --- 新增：規則說明 Modal 樣式 --- */
+        /* 規則說明 Modal 樣式 */
         #rules-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 2000;
@@ -47,7 +47,7 @@
             max-width: 650px; width: 100%;
             border: 5px solid #1976d2;
             box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            max-height: 90vh; overflow-y: auto; /* 支援手機捲動 */
+            max-height: 90vh; overflow-y: auto; 
         }
         .rules-content h2 {
             text-align: center; color: #1976d2; margin-top: 0; margin-bottom: 20px;
@@ -66,7 +66,7 @@
         }
         .btn-close-rules:hover { background: #222; }
 
-        /* HUD 與遊戲內按鈕 (桌面版預設樣式) */
+        /* HUD 與遊戲內按鈕 */
         #hud-container { 
             position: fixed; bottom: 20px; right: 20px; width: auto; max-width: 300px; 
             background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); 
@@ -94,7 +94,7 @@
         .btn-rect:active { transform: scale(0.95); }
         .btn-rect:disabled { background: #666; color: #aaa; cursor: not-allowed; } 
 
-        /* *** 手機版優化 *** */
+        /* 手機版優化 */
         @media (max-width: 768px) {
             h1 { font-size: 50px; }
             #hud-container { bottom: 10px; right: 10px; padding: 10px; max-width: 220px; border-radius: 12px; }
@@ -103,7 +103,6 @@
             .hud-msg { font-size: 14px; margin-bottom: 5px; }
             .btn-grid { gap: 5px; }
             
-            /* 規則視窗手機版字體調整 */
             .rules-content h2 { font-size: 28px; }
             .rules-title { font-size: 18px; }
             .rules-text { font-size: 15px; }
@@ -162,34 +161,28 @@
     <div id="rules-modal" class="hidden">
         <div class="rules-content">
             <h2>遊戲規則</h2>
-            
             <div class="rules-section">
                 <div class="rules-title">增加設施：</div>
                 <p class="rules-text">每猜贏一次，就可以在自己的領域內新增設施。</p>
                 <span class="rules-sub-text">● 第一階段：建立保護罩。(當成功建立三層保護罩後即可進入第二階段)</span>
                 <span class="rules-sub-text">● 第二階段：加入大炮。(當進入第二階段後即使保護罩消失仍可建立大炮)</span>
             </div>
-
             <div class="rules-section">
                 <div class="rules-title">攻擊與防禦：</div>
                 <p class="rules-text">加入武器後，可以攻擊對方的設施。</p>
                 <p class="rules-text">被攻擊的一方需猜贏對方才能修復設施並反擊。</p>
             </div>
-
             <div class="rules-section">
                 <div class="rules-title">遊戲結束：</div>
                 <p class="rules-text">當其中一方的保護罩和堡壘全部被摧毀時，該方即輸掉遊戲。</p>
             </div>
-
             <button class="btn-close-rules" id="btn-close-rules">我知道了</button>
         </div>
     </div>
 
     <div id="hud-container" class="hidden">
         <div id="hud-msg" class="hud-msg">請出拳</div>
-        
         <div id="rps-result-display" class="hidden"></div>
-        
         <div id="room-code-display" class="hidden"></div>
 
         <div id="grp-rps" class="btn-grid hidden">
@@ -225,7 +218,6 @@
         if (!audioCtx) {
             try { audioCtx = new AudioContext(); } catch (e) { console.error("Audio Context creation failed:", e); return; }
         }
-        
         if(audioCtx.state === 'suspended') audioCtx.resume();
         
         const osc = audioCtx.createOscillator();
@@ -669,7 +661,8 @@
             let rotationCenterY = groundY + (dir * rowH); 
             ctx.save();
             ctx.translate(x, rotationCenterY);
-            ctx.scale(1, -1); 
+            // *** 修改處：使用 rotate(Math.PI) 取代 scale(1, -1) 來達成 180 度旋轉 ***
+            ctx.rotate(Math.PI); 
             ctx.translate(-x, -rotationCenterY); 
         }
 
