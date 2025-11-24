@@ -66,15 +66,22 @@
         }
         .btn-close-rules:hover { background: #222; }
 
-        /* HUD 與遊戲內按鈕 */
+        /* --- HUD (控制台) 樣式修改 --- */
         #hud-container { 
-            position: fixed; bottom: 20px; right: 20px; width: auto; max-width: 300px; 
+            position: fixed; 
+            top: 50%;                 /* 垂直置中 */
+            right: 20px;              /* 靠右邊緣 */
+            transform: translateY(-50%); /* 根據自身高度向上平移 50% 以實現真正的垂直居中 */
+            width: auto; 
+            max-width: 300px; 
             background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(5px); 
             border-radius: 15px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); 
             z-index: 100; display: flex; flex-direction: column; align-items: center; 
             border: 2px solid #444; 
             transition: all 0.3s ease; 
         }
+        /* --- 結束 HUD 樣式修改 --- */
+        
         .hud-msg { font-size: 16px; color: #d32f2f; font-weight: bold; margin-bottom: 10px; text-align: center; min-height: 20px; white-space: nowrap; }
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         
@@ -94,10 +101,48 @@
         .btn-rect:active { transform: scale(0.95); }
         .btn-rect:disabled { background: #666; color: #aaa; cursor: not-allowed; } 
 
+        /* ☢️ 核彈中心按鈕 ☢️ */
+        #nuclear-launch-center {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1500; 
+            display: flex; align-items: center; justify-content: center; 
+            background: rgba(0, 0, 0, 0.4); 
+            pointer-events: none; /* 預設不攔截滑鼠事件 */
+        }
+        
+        #nuclear-launch-center.active {
+            pointer-events: auto; /* 顯示時才可點擊 */
+        }
+
+        #rps-nuclear-center {
+            font-size: 30px; 
+            padding: 20px 60px; 
+            background: #d32f2f !important; 
+            border: 5px solid #ffeb3b !important; /* 警告黃色邊框 */
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.9);
+            min-width: 300px;
+            animation: pulse 1s infinite alternate; /* 紅色按鈕動畫 */
+            transition: all 0.2s;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); box-shadow: 0 0 30px rgba(255, 0, 0, 0.9); }
+            to { transform: scale(1.05); box-shadow: 0 0 50px rgba(255, 100, 100, 1); }
+        }
+
         /* 手機版優化 */
         @media (max-width: 768px) {
             h1 { font-size: 50px; }
-            #hud-container { bottom: 10px; right: 10px; padding: 10px; max-width: 220px; border-radius: 12px; }
+            /* --- HUD (控制台) 手機樣式修改 --- */
+            #hud-container { 
+                top: 50%;             /* 垂直置中 */
+                right: 10px;          /* 靠右邊緣 (手機版) */
+                transform: translateY(-50%); /* 垂直居中調整 */
+                padding: 10px; 
+                max-width: 220px; 
+                border-radius: 12px; 
+            }
+            /* --- 結束 HUD 手機樣式修改 --- */
+            
             .btn-circle { width: 45px; height: 45px; font-size: 22px; border-width: 1.5px; }
             .btn-rect { width: 60px; padding: 8px 2px; font-size: 12px; }
             .hud-msg { font-size: 14px; margin-bottom: 5px; }
@@ -134,6 +179,12 @@
     <div id="top-status-bar">對手: 尋找中...</div>
     <div id="player-status-float">我方: 等待連線...</div>
 
+    <div id="nuclear-launch-center" class="hidden">
+        <button id="rps-nuclear-center" class="btn-menu">
+            <span id="nuclear-status-text">☢️ 核彈發射 (20/20) ☢️</span>
+            <div style="font-size: 14px; margin-top: 5px; font-weight: normal;">點擊發射，直接獲勝！</div>
+        </button>
+    </div>
     <div id="menu-screen" class="full-screen-menu">
         <h1>天下太平</h1>
         
@@ -173,8 +224,9 @@
                 <p class="rules-text">被攻擊的一方需猜贏對方才能修復設施並反擊。</p>
             </div>
             <div class="rules-section">
-                <div class="rules-title">遊戲結束：</div>
-                <p class="rules-text">當其中一方的保護罩和堡壘全部被摧毀時，該方即輸掉遊戲。</p>
+                <div class="rules-title" style="color:red">☢️ 核彈翻盤機制：</div>
+                <p class="rules-text">輸拳累積能量，集滿 20 點能量可解鎖「核彈」。</p>
+                <p class="rules-text">發射核彈需手動點擊中央按鈕，可直接贏得比賽！(除非對方同時發射)</p>
             </div>
             <button class="btn-close-rules" id="btn-close-rules">我知道了</button>
         </div>
@@ -256,7 +308,11 @@
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + 0.35);
         },
-        boom: () => createAndPlayTone(80, 'sawtooth', 0.5, 0.2)
+        boom: () => createAndPlayTone(80, 'sawtooth', 0.5, 0.2),
+        nuclear_launch: () => { 
+            createAndPlayTone(300, 'square', 0.5, 0.5); 
+            createAndPlayTone(50, 'sawtooth', 1.5, 0.3); 
+        }
     };
     
     // --- 變數 ---
@@ -269,14 +325,18 @@
     let bullets = [];
     let explosions = [];
     let rpsCountDownTimer = null;
+    let nuclearAnimationActive = false; // 核彈動畫狀態
+    let nuclearExplosionState = null;   // 核彈爆炸數據
 
-    // --- 輔助函數 (不變) ---
+
+    // --- 輔助函數 ---
     function getUsername() {
         const nameInput = document.getElementById('user-name-input').value.trim();
         return nameInput || "玩家";
     }
     function setMsg(t) { document.getElementById('hud-msg').innerText = t; }
     
+    // 更新狀態列，加入 (核彈能量) 顯示
     function updateInfo() {
         if (!GAME_STATE || !MY_ROLE) {
              document.getElementById('player-status-float').innerText = `我方: ${getUsername()} (等待...)`;
@@ -287,8 +347,11 @@
         const OPPONENT_ROLE = MY_ROLE === 'player1' ? 'player2' : 'player1';
         const OPPONENT = GAME_STATE[OPPONENT_ROLE];
         
-        document.getElementById('top-status-bar').innerText = `對手 (${OPPONENT.name}) HP:${OPPONENT.hp} 盾:${OPPONENT.shields} 炮:${OPPONENT.hasTurret?'有':'無'}`;
-        document.getElementById('player-status-float').innerText = `我方 (${ME.name}) HP:${ME.hp} 盾:${ME.shields} 炮:${ME.hasTurret?'有':'無'}`;
+        // 對手狀態欄：加入能量顯示及 (核彈能量)
+        document.getElementById('top-status-bar').innerText = `對手 (${OPPONENT.name}) HP:${OPPONENT.hp} 盾:${OPPONENT.shields} 炮:${OPPONENT.hasTurret?'有':'無'} ⚡:${OPPONENT.energy}/20 (核彈能量)`;
+        
+        // 我方狀態欄：加入能量顯示及 (核彈能量)
+        document.getElementById('player-status-float').innerText = `我方 (${ME.name}) HP:${ME.hp} 盾:${ME.shields} 炮:${ME.hasTurret?'有':'無'} ⚡:${ME.energy}/20 (核彈能量)`;
     }
     
     function showUI(mode, msg) {
@@ -338,10 +401,9 @@
             resultDisplay.innerText = displayHTML;
             resultDisplay.classList.remove('hidden');
             
-            setTimeout(() => {
-                if (resultDisplay) resultDisplay.classList.add('hidden');
-            }, 1500); 
+            // 猜拳結果持久顯示
         } else {
+            // 如果當前日誌沒有猜拳結果，則隱藏顯示
             resultDisplay.classList.add('hidden');
         }
 
@@ -350,8 +412,21 @@
             rpsCountDownTimer = null;
         }
 
+        // --- 核彈中心按鈕邏輯 ---
+        const nukeCenterDiv = document.getElementById('nuclear-launch-center');
+        nukeCenterDiv.classList.add('hidden');
+        nukeCenterDiv.classList.remove('active');
+        
         if (phase === 'RPS_CHOICE') {
             if (myData.rpsChoice === null) {
+                
+                // 核彈按鈕顯示
+                if (myData.energy >= 20) {
+                    nukeCenterDiv.classList.remove('hidden');
+                    nukeCenterDiv.classList.add('active'); // 啟用點擊事件
+                    document.getElementById('nuclear-status-text').innerHTML = `☢️ 核彈發射 (20/20) ☢️`;
+                }
+
                 let timeLeft = 5;
                 setMsg(`請出拳 (${timeLeft})`); 
                 
@@ -504,6 +579,7 @@
             
             const lastLog = state.log[state.log.length - 1];
             
+            // 動畫觸發邏輯
             if (lastLog && lastLog.includes('攻擊了') && (lastLog.includes('成功擊落') || lastLog.includes('摧毀') || lastLog.includes('直接命中'))) {
                 
                 const attackerName = lastLog.split(' ')[0];
@@ -544,7 +620,15 @@
                     animationState = true;
                 }
             }
-            
+
+            // ☢️ 核彈特殊動畫觸發 ☢️
+            if (lastLog && lastLog.includes('核彈')) { 
+                Sound.boom(); 
+                Sound.boom(); 
+                nuclearAnimationActive = true; 
+                nuclearExplosionState = null; // 重置動畫狀態
+            }
+
             updateUIBasedOnState(); 
             updateInfo(); 
         });
@@ -574,6 +658,11 @@
     function playRPS(val) {
         if (!MY_ROOM_ID || !socket || !GAME_STATE || GAME_STATE.currentPhase !== 'RPS_CHOICE' || GAME_STATE[MY_ROLE].rpsChoice) return;
         Sound.click();
+
+        // 隱藏中央核彈按鈕
+        document.getElementById('nuclear-launch-center').classList.add('hidden');
+        document.getElementById('nuclear-launch-center').classList.remove('active');
+
         if (rpsCountDownTimer) clearInterval(rpsCountDownTimer);
         socket.emit('player_rps_choice', { roomId: MY_ROOM_ID, choice: val });
         ['rps-rock', 'rps-scissors', 'rps-paper'].forEach(id => document.getElementById(id).disabled = true);
@@ -661,7 +750,6 @@
             let rotationCenterY = groundY + (dir * rowH); 
             ctx.save();
             ctx.translate(x, rotationCenterY);
-            // *** 修改處：使用 rotate(Math.PI) 取代 scale(1, -1) 來達成 180 度旋轉 ***
             ctx.rotate(Math.PI); 
             ctx.translate(-x, -rotationCenterY); 
         }
@@ -740,11 +828,53 @@
         }
     }
 
+    // ☢️ 新增核彈爆炸動畫繪製函數 ☢️
+    function drawNuclearExplosion(state) {
+        if (!state) return;
+        const maxR = Math.min(w, h) * 1.5;
+        const opacity = Math.max(0, 1 - (state.r / maxR));
+        
+        // 衝擊波白光閃爍
+        if (state.r < 150) {
+            ctx.fillStyle = `rgba(255, 255, 255, 1)`;
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        // 火球主體
+        ctx.fillStyle = `rgba(255, ${Math.floor(255 * opacity)}, 0, ${opacity})`;
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, state.r, 0, Math.PI*2);
+        ctx.fill();
+
+        // 邊緣衝擊波
+        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.8})`;
+        ctx.lineWidth = 15;
+        ctx.beginPath();
+        ctx.arc(w/2, h/2, state.r * 1.1, 0, Math.PI*2);
+        ctx.stroke();
+    }
+
     let gameLoop = function() {
         try {
             if (!ctx) { requestAnimationFrame(gameLoop); return; }
             ctx.clearRect(0, 0, w, h);
             drawScene();
+            
+            // ☢️ 核彈動畫繪製邏輯 ☢️
+            if (nuclearAnimationActive) {
+                if (!nuclearExplosionState) {
+                    nuclearExplosionState = { r: 10, maxR: Math.min(w, h) * 1.5, start: Date.now() };
+                }
+                
+                nuclearExplosionState.r += 20; // 快速擴散
+                drawNuclearExplosion(nuclearExplosionState);
+
+                if (nuclearExplosionState.r > nuclearExplosionState.maxR) {
+                    nuclearAnimationActive = false;
+                    nuclearExplosionState = null;
+                }
+            }
+
 
             if (animationState) {
                 let activeAnimations = false;
@@ -786,7 +916,7 @@
                 });
                 explosions = explosions.filter(ex => ex.alpha > 0); 
 
-                if (!activeAnimations) { animationState = false; }
+                if (!activeAnimations && !nuclearAnimationActive) { animationState = false; }
             }
         } catch(e) {
             console.error("Game loop error:", e);
@@ -804,7 +934,7 @@
             document.getElementById('btn-join-private').addEventListener('click', joinPrivateRoom);
             document.getElementById('btn-exit').addEventListener('click', () => { if(socket) socket.disconnect(); location.reload(); });
             
-            // 新增: 規則視窗控制
+            // 規則視窗控制
             document.getElementById('btn-open-rules').addEventListener('click', () => {
                 document.getElementById('rules-modal').classList.remove('hidden');
             });
@@ -815,6 +945,15 @@
             document.getElementById('rps-rock').addEventListener('click', () => playRPS('rock'));
             document.getElementById('rps-scissors').addEventListener('click', () => playRPS('scissors'));
             document.getElementById('rps-paper').addEventListener('click', () => playRPS('paper'));
+            
+            // ☢️ 中央核彈按鈕事件 ☢️
+            document.getElementById('rps-nuclear-center').addEventListener('click', () => {
+                if(confirm("☢️ 警告！確定要發射戰術核彈嗎？這將消耗所有能量並直接贏得比賽！")) {
+                     Sound.nuclear_launch();
+                     playRPS('nuclear');
+                }
+            });
+
             document.getElementById('btn-sh').addEventListener('click', () => doAct('shield'));
             document.getElementById('btn-tu').addEventListener('click', () => doAct('turret'));
             document.getElementById('btn-at').addEventListener('click', () => doAct('attack')); 
