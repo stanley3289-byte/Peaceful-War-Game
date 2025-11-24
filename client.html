@@ -541,21 +541,25 @@
         }
     }
     
+    // ** 修正處：確保無護盾時砲台位置一致 **
     function getTurretY(victimRole, victimData) {
         const isEnemy = (victimRole !== MY_ROLE); 
         const groundY = isEnemy ? 50 : h - 50;
         const dir = isEnemy ? 1 : -1;
         const turretFontSize = 60;
-        const rowH = 45;
+        const rowH = 45; // HP 文字行高度
 
         let shieldTopY;
         if (victimData.shields > 0) {
+            // 有護盾：砲台在最外層護盾外緣上方/下方
             let shieldCount = victimData.shields > 0 ? victimData.shields : 1; 
             let maxShieldR = 100 + ((shieldCount - 1) * 15);
             shieldTopY = groundY + (dir * maxShieldR);
             return shieldTopY + (dir * (turretFontSize / 2 + 5)); 
         } else {
-            return groundY + (dir * rowH * 2) + (dir * (turretFontSize / 2 + 5));
+            // 無護盾：砲台中心應放置在距離地面最遠的 HP 文字行中心。
+            // 該位置為 groundY +/- 1.5 * rowH
+            return groundY + (dir * rowH * 1.5); 
         }
     }
 
